@@ -39,6 +39,11 @@ public:
         static CVector2D nodePoints[MAX_NODE_POINTS];
         static RwIm2DVertex lineVerts[MAX_NODE_POINTS * 4];
 
+        // --- debug instrumentation (temporary, to diagnose the straight-line issue) ---
+        static short dbgNodesCount = -1;
+        static bool dbgHasBlip = false;
+        static bool dbgInVehicle = false;
+
         Events::gameProcessEvent += []() {
             if (FrontEndMenuManager.m_nTargetBlipIndex
                 && CRadar::ms_RadarTrace[LOWORD(FrontEndMenuManager.m_nTargetBlipIndex)].m_nCounter == HIWORD(FrontEndMenuManager.m_nTargetBlipIndex)
@@ -55,6 +60,12 @@ public:
         Events::drawRadarOverlayEvent += []() {
             gpsShown = false;
             CPed *playa = FindPlayerPed(0);
+
+            dbgInVehicle = (playa && playa->m_pVehicle && playa->bInVehicle);
+            dbgHasBlip = (FrontEndMenuManager.m_nTargetBlipIndex
+                && CRadar::ms_RadarTrace[LOWORD(FrontEndMenuManager.m_nTargetBlipIndex)].m_nCounter == HIWORD(FrontEndMenuManager.m_nTargetBlipIndex)
+                && CRadar::ms_RadarTrace[LOWORD(FrontEndMenuManager.m_nTargetBlipIndex)].m_nBlipDisplay);
+
             if (playa
                 && playa->m_pVehicle
                 && playa->bInVehicle
@@ -72,6 +83,8 @@ public:
 
                 ThePaths.DoPathSearch(0, FindPlayerCoors(0), CNodeAddress(), destPosn, resultNodes, &nodesCount, MAX_NODE_POINTS, &gpsDistance,
                     999999.0f, NULL, 999999.0f, false, CNodeAddress(), false, playa->m_pVehicle->m_nVehicleSubClass == VEHICLE_BOAT);
+
+                dbgNodesCount = nodesCount;
 
                 if (nodesCount > 0) {
                     for (short i = 0; i < nodesCount; i++) {
@@ -171,6 +184,20 @@ public:
                     sprintf(text, "%dm", static_cast<int>(gpsDistance));
                 CFont::PrintString(radarBottom.x, radarBottom.y + 8.0f * static_cast<float>(RsGlobal.maximumHeight) / 448.0f, text);
             }
+
+            // --- always-on debug line (temporary) ---
+            CFont::SetOrientation(ALIGN_LEFT);
+            CFont::SetColor(CRGBA(255, 255, 255, 255));
+            CFont::SetBackground(true, true);
+            CFont::SetWrapx(600.0f);
+            CFont::SetScale(0.4f, 0.8f);
+            CFont::SetFontStyle(FONT_SUBTITLES);
+            CFont::SetProportional(true);
+            CFont::SetDropShadowPosition(0);
+            char dbg[96];
+            sprintf(dbg, "GPS dbg: blip=%d inVeh=%d nodes=%d",
+                dbgHasBlip ? 1 : 0, dbgInVehicle ? 1 : 0, (int)dbgNodesCount);
+            CFont::PrintString(20.0f, 20.0f, dbg);
         };
     }
 
