@@ -34,23 +34,13 @@ jobs:
         run: |
           ./premake5.exe --pluginsdkdir="$env:PLUGIN_SDK_DIR" vs2022
 
-      - name: DEBUG - show solution configurations
-        shell: pwsh
-        run: |
-          Write-Host "===== plugin.sln ====="
-          Get-Content "$env:PLUGIN_SDK_DIR\plugin.sln"
-          Write-Host "===== examples/GPS/GPS.sln ====="
-          Get-Content "$env:PLUGIN_SDK_DIR\examples\GPS\GPS.sln"
-
       - name: Build Plugin_SA static library
         shell: pwsh
-        continue-on-error: true
         run: |
-          msbuild "$env:PLUGIN_SDK_DIR\plugin.sln" /t:Plugin_SA /p:Configuration=Release /p:Platform=Win32 /m
+          msbuild "$env:PLUGIN_SDK_DIR\plugin.sln" /t:Plugin_SA /p:Configuration=Release "/p:Platform=Mixed Platforms" /m
 
       - name: Build GPS plugin (.asi)
         shell: pwsh
-        continue-on-error: true
         run: |
           msbuild "$env:PLUGIN_SDK_DIR\examples\GPS\GPS.sln" /t:GPS /p:Configuration=Release "/p:Platform=GTA-SA" /m
 

@@ -44,8 +44,8 @@ public:
                 && CRadar::ms_RadarTrace[LOWORD(FrontEndMenuManager.m_nTargetBlipIndex)].m_nCounter == HIWORD(FrontEndMenuManager.m_nTargetBlipIndex)
                 && CRadar::ms_RadarTrace[LOWORD(FrontEndMenuManager.m_nTargetBlipIndex)].m_nBlipDisplay
                 && FindPlayerPed()
-                && DistanceBetweenPoints(CVector2D(FindPlayerCoors(0)),
-                    CVector2D(CRadar::ms_RadarTrace[LOWORD(FrontEndMenuManager.m_nTargetBlipIndex)].m_vecPos)) < MAX_TARGET_DISTANCE)
+                && CVector::Distance2D(FindPlayerCoors(0),
+                    CRadar::ms_RadarTrace[LOWORD(FrontEndMenuManager.m_nTargetBlipIndex)].m_vecPos) < MAX_TARGET_DISTANCE)
             {
                 CRadar::ClearBlip(FrontEndMenuManager.m_nTargetBlipIndex);
                 FrontEndMenuManager.m_nTargetBlipIndex = 0;
@@ -144,7 +144,7 @@ public:
                         ((IDirect3DDevice9*)GetD3DDevice())->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
                     }
 
-                    gpsDistance += DistanceBetweenPoints(FindPlayerCoors(0), ThePaths.GetPathNode(resultNodes[0])->GetNodeCoors());
+                    gpsDistance += CVector::Distance(FindPlayerCoors(0), ThePaths.GetPathNode(resultNodes[0])->GetNodeCoors());
                     gpsShown = true;
                 }
             }
