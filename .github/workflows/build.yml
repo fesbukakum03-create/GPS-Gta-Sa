@@ -3,7 +3,12 @@ name: Build GPS Mod (.asi)
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'result/**'
   workflow_dispatch: {}
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -44,24 +49,30 @@ jobs:
         run: |
           msbuild "$env:PLUGIN_SDK_DIR\examples\GPS\GPS.sln" /t:GPS /p:Configuration=Release "/p:Platform=GTA-SA" /m
 
-      - name: Collect output into a ModLoader-ready folder
+      - name: Collect output into result/ (ModLoader-ready folder)
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path "dist/modloader/GPS-Mod" | Out-Null
+          New-Item -ItemType Directory -Force -Path "result/GPS-Mod" | Out-Null
           $asi = Get-ChildItem -Path "external/plugin-sdk/examples/GPS" -Recurse -Filter "*.asi" | Select-Object -First 1
           if (-not $asi) {
             Write-Error "Build did not produce an .asi file. Check the previous steps' logs."
             exit 1
           }
-          Copy-Item $asi.FullName "dist/modloader/GPS-Mod/GPSMod.asi"
+          Copy-Item $asi.FullName "result/GPS-Mod/GPSMod.asi" -Force
           if (Test-Path "README_MODLOADER.md") {
-            Copy-Item "README_MODLOADER.md" "dist/modloader/GPS-Mod/README.txt"
+            Copy-Item "README_MODLOADER.md" "result/GPS-Mod/README.txt" -Force
           }
-          Write-Host "Packaged: dist/modloader/GPS-Mod/GPSMod.asi"
+          Write-Host "Packaged: result/GPS-Mod/GPSMod.asi"
 
-      - name: Upload artifact
+      - name: Upload artifact (backup copy)
         uses: actions/upload-artifact@v4
         with:
           name: GPS-Mod-ModLoader
-          path: dist/modloader
+          path: result
           if-no-files-found: error
+
+      - name: Commit result/ back to the repo
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(result): update built GPSMod.asi [skip ci]"
+          file_pattern: "result/**"

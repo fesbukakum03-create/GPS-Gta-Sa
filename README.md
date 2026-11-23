@@ -8,9 +8,10 @@ diubah jadi kuning.
 
 ## Download
 
-Lihat tab **Actions** di repo ini → pilih run terbaru yang hijau (sukses) →
-download artifact **GPS-Gta-Sa-Mod** / **GPS-Mod-ModLoader**. Isinya folder
-`modloader/GPS-Mod/GPSMod.asi` siap pakai.
+Langsung ambil dari folder **[`result/GPS-Mod/`](result/GPS-Mod)** di repo
+ini — tinggal buka `GPSMod.asi`, klik **Download raw file**. File ini
+otomatis ter-update setiap ada perubahan (di-build & di-commit balik oleh
+GitHub Actions).
 
 ## Cara pasang
 
