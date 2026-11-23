@@ -1,0 +1,67 @@
+name: Build GPS Mod (.asi)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repo (with plugin-sdk submodule)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply our customized GPS source (yellow route line)
+        shell: pwsh
+        run: |
+          Copy-Item -Force "patches/GPS_Main.cpp" "external/plugin-sdk/examples/GPS/Main.cpp"
+
+      - name: Set PLUGIN_SDK_DIR environment variable
+        shell: pwsh
+        run: |
+          $sdk = (Resolve-Path "external/plugin-sdk").Path
+          "PLUGIN_SDK_DIR=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Generate Visual Studio project files (premake5)
+        shell: pwsh
+        working-directory: external/plugin-sdk/tools/premake
+        run: |
+          ./premake5.exe --pluginsdkdir="$env:PLUGIN_SDK_DIR" vs2022
+
+      - name: Build Plugin_SA static library
+        shell: pwsh
+        run: |
+          msbuild "$env:PLUGIN_SDK_DIR\plugin.sln" /t:Plugin_SA /p:Configuration=Release /p:Platform=Win32 /m
+
+      - name: Build GPS plugin (.asi)
+        shell: pwsh
+        run: |
+          msbuild "$env:PLUGIN_SDK_DIR\examples\GPS\GPS.sln" /t:GPS /p:Configuration=Release "/p:Platform=GTA-SA" /m
+
+      - name: Collect output into a ModLoader-ready folder
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "dist/modloader/GPS-Mod" | Out-Null
+          $asi = Get-ChildItem -Path "external/plugin-sdk/examples/GPS" -Recurse -Filter "*.asi" | Select-Object -First 1
+          if (-not $asi) {
+            Write-Error "Build did not produce an .asi file. Check the previous steps' logs."
+            exit 1
+          }
+          Copy-Item $asi.FullName "dist/modloader/GPS-Mod/GPSMod.asi"
+          if (Test-Path "README_MODLOADER.md") {
+            Copy-Item "README_MODLOADER.md" "dist/modloader/GPS-Mod/README.txt"
+          }
+          Write-Host "Packaged: dist/modloader/GPS-Mod/GPSMod.asi"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GPS-Mod-ModLoader
+          path: dist/modloader
+          if-no-files-found: error
